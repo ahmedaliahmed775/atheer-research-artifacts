@@ -1,4 +1,12 @@
 # Paper configuration (S1 vs S2 only) — Network-only comparison
+#
+# This file is a human-readable documentation mirror of the parameters used
+# in the Section VI evaluation.  The simulation code (atheer_sim.py) does NOT
+# read this YAML at runtime; it is provided for transparency and auditability.
+#
+# NOTE on num_runs: the paper reported results using 30 independent
+# replications.  The code default (NUM_RUNS = 5) enables fast CI reproduction;
+# change NUM_RUNS in atheer_sim.py to 30 to fully replicate the paper results.
 meta:
   paper: "DTISD 2026"
   section: "VI"
@@ -8,7 +16,7 @@ experiment:
   load_points_tps: [1, 5, 10, 20, 30, 40, 50]
   warmup_s: 5
   measure_s: 60
-  num_runs: 30
+  num_runs: 30   # paper value; code uses NUM_RUNS=5 for fast reproduction
   base_seed: 20260211
 
 bank:
@@ -35,7 +43,7 @@ scenarios:
       max_loss: 0.35
 
   - key: "S2_PRIVATE"
-    name: "S2: Private APN (Atheer) [Network-only]"
+    name: "S2: Private APN (Atheer)"
     network:
       latency_mean_s: 0.060
       latency_std_s: 0.015

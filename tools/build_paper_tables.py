@@ -1,7 +1,24 @@
-"""Optional helper: build paper-ready tables from raw per-transaction CSV.
+"""Build paper-ready summary tables from a raw per-transaction simulation CSV.
 
-Usage:
-  python tools/build_paper_tables.py --raw outputs/atheer_simulation_results.csv --out paper_artifacts/
+This is an **optional helper** for the Section VI artifact.  It re-derives
+Table IV (aggregated performance summary) and Table V (failure-mode breakdown)
+from any raw CSV produced by ``atheer_sim.py``, without re-running the full
+simulation.
+
+Usage::
+
+    python tools/build_paper_tables.py \\
+        --raw outputs/atheer_simulation_results_YYYYMMDD_HHMMSS.csv \\
+        --out paper_artifacts/
+
+Outputs written to ``--out`` directory:
+
+* ``table_summary_long_YYYYMMDD_HHMMSS.csv``  — Table IV (long format)
+* ``table_failure_breakdown_YYYYMMDD_HHMMSS.csv`` — Table V
+
+The aggregation methodology (two-stage mean → CI) mirrors
+:func:`atheer_sim.build_summary_tables` exactly, so the numbers are
+identical to those produced by the main simulation script.
 """
 
 import argparse
@@ -10,17 +27,37 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-def ci95(mean, std, n):
+
+def ci95(mean: float, std: float, n: int):
+    """Compute the half-width of the 95% confidence interval (z = 1.96).
+
+    Parameters
+    ----------
+    mean:
+        Sample mean.
+    std:
+        Sample standard deviation.
+    n:
+        Number of independent replications.
+
+    Returns
+    -------
+    tuple: ``(lower_bound, upper_bound)``
+    """
     if n <= 1 or pd.isna(std) or std == 0:
         return (mean, mean)
     half = 1.96 * (std / np.sqrt(n))
     return (mean - half, mean + half)
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--raw", required=True, help="Raw per-transaction CSV")
-    ap.add_argument("--out", default="paper_artifacts", help="Output directory")
-    ap.add_argument("--max-load", type=float, default=None, help="Max load for failure breakdown (default: max in CSV)")
+    """Parse arguments, compute Table IV and Table V, and write CSV outputs."""
+    ap = argparse.ArgumentParser(
+        description="Build paper-ready summary tables from a raw simulation CSV."
+    )
+    ap.add_argument("--raw", required=True, help="Path to raw per-transaction CSV produced by atheer_sim.py")
+    ap.add_argument("--out", default="paper_artifacts", help="Output directory (created if absent)")
+    ap.add_argument("--max-load", type=float, default=None,
+                    help="Offered load (TPS) to use for failure breakdown table; defaults to the maximum in the CSV")
     args = ap.parse_args()
 
     df = pd.read_csv(args.raw)
